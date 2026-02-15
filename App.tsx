@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { CompanyHeader } from './components/CompanyHeader';
@@ -7,11 +8,12 @@ import { ISCRadar } from './components/RadarChart';
 import { InvestorTable } from './components/InvestorTable';
 import { ComparisonView } from './components/ComparisonView';
 import { APPLE_DATA } from './data/appleData';
+import { ORE_DATA } from './data/oreData';
 import { downloadJSON, downloadMarkdown, downloadHTML } from './utils/export';
 import { CompanyData } from './types';
 import { 
   Gavel, Wallet, Activity, DollarSign, Cpu, Scale, AlertTriangle, 
-  Search, Sparkles, FileJson, FileText, Printer, Layers, Plus, ArrowRight, FileCode
+  Search, Sparkles, FileJson, FileText, Printer, Layers, Plus, ArrowRight, FileCode, Zap
 } from 'lucide-react';
 
 type ViewMode = 'single' | 'compare';
@@ -82,8 +84,8 @@ export default function App() {
                     setComparisonList(prev => {
                         // Prevent duplicates
                         if (prev.find(c => c.company.ticker === newData.company.ticker)) return prev;
-                        // Limit to 7
-                        if (prev.length >= 7) return prev;
+                        // For manual additions, we allow going over the limit if needed, or stick to a soft limit.
+                        // We won't block it here to allow "Power User" batching.
                         return [...prev, newData];
                     });
                 } else {
@@ -102,14 +104,25 @@ export default function App() {
     setTickerInput("");
   };
 
+  const loadOREScenario = () => {
+      // Append ORE Data to the existing list instead of replacing it
+      setComparisonList(prev => {
+          // Create a Set of existing tickers for quick lookup to prevent duplicates
+          const existingTickers = new Set(prev.map(c => c.company.ticker));
+          
+          // Filter ORE data to only include companies not already in the list
+          const newOreCompanies = ORE_DATA.filter(c => !existingTickers.has(c.company.ticker));
+          
+          return [...prev, ...newOreCompanies];
+      });
+      setViewMode('compare');
+  };
+
   const addToComparison = () => {
       if (!comparisonList.find(c => c.company.ticker === data.company.ticker)) {
-          if (comparisonList.length < 7) {
+           // Relaxed limit check for better UX
             setComparisonList([...comparisonList, data]);
             setViewMode('compare');
-          } else {
-            alert("Limite de comparaison atteinte.");
-          }
       } else {
           setViewMode('compare');
       }
@@ -156,7 +169,7 @@ export default function App() {
              </div>
              
              {/* View Toggles */}
-             <div className="hidden md:flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+             <div className="hidden md:flex bg-slate-800 rounded-lg p-1 border border-slate-700 items-center">
                 <button 
                     onClick={() => setViewMode('single')}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'single' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
@@ -167,6 +180,13 @@ export default function App() {
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'compare' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
                     <Layers size={14} /> 
                     Comparateur <span className="bg-slate-900 px-1.5 rounded text-xs text-slate-500">{comparisonList.length}</span>
+                </button>
+                <div className="w-px h-4 bg-slate-600 mx-2"></div>
+                <button 
+                    onClick={loadOREScenario}
+                    title="Ajouter les structures de fonds (Vanguard, BlackRock...) à l'analyse courante"
+                    className="px-3 py-1.5 rounded-md text-sm font-bold transition-all flex items-center gap-2 text-indigo-400 hover:text-indigo-300 hover:bg-slate-700">
+                    <Zap size={14} className="fill-indigo-400" /> + ORE Engine
                 </button>
              </div>
           </div>
@@ -220,12 +240,15 @@ export default function App() {
                 <div className="flex justify-between items-end mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                            <Layers className="text-blue-500" /> Deck Comparatif
+                            {comparisonList.some(c => c.company.ticker === 'VANGUARD') ? <Zap className="text-indigo-500 fill-indigo-500" /> : <Layers className="text-blue-500" />} 
+                            {comparisonList.some(c => c.company.ticker === 'VANGUARD') ? 'Ownership Resolution Engine (ORE)' : 'Deck Comparatif'}
                         </h2>
-                        <p className="text-slate-400 text-sm mt-1">Comparaison structurelle côte-à-côte.</p>
+                        <p className="text-slate-400 text-sm mt-1">
+                             {comparisonList.some(c => c.company.ticker === 'VANGUARD') ? 'Analyse forensic combinée : Entreprises cibles + Structures de contrôle.' : 'Comparaison structurelle côte-à-côte.'}
+                        </p>
                     </div>
                     <div className="text-sm text-slate-500 font-mono">
-                        {comparisonList.length} / 7 slots utilisés
+                        {comparisonList.length} slots actifs
                     </div>
                 </div>
                 <ComparisonView companies={comparisonList} onRemove={removeFromComparison} />
@@ -284,42 +307,42 @@ export default function App() {
                                 title="Contrôle Formel" 
                                 code="CF" 
                                 result={data.analysis.formal_control} 
-                                color="text-blue-400"
+                                color="text-blue-400" 
                                 icon={<Gavel size={18} />}
                             />
                             <AnalysisCard 
                                 title="Contrôle Capital" 
                                 code="CC" 
                                 result={data.analysis.capital_control} 
-                                color="text-indigo-400"
+                                color="text-indigo-400" 
                                 icon={<Wallet size={18} />}
                             />
                             <AnalysisCard 
                                 title="Contrainte Marché" 
                                 code="CM" 
                                 result={data.analysis.market_constraint} 
-                                color="text-sky-400"
+                                color="text-sky-400" 
                                 icon={<Activity size={18} />}
                             />
                             <AnalysisCard 
                                 title="Puissance Revenus" 
                                 code="CR" 
                                 result={data.analysis.revenue_power} 
-                                color="text-emerald-400"
+                                color="text-emerald-400" 
                                 icon={<DollarSign size={18} />}
                             />
                             <AnalysisCard 
                                 title="Puissance Productive" 
                                 code="CP" 
                                 result={data.analysis.productive_power} 
-                                color="text-violet-400"
+                                color="text-violet-400" 
                                 icon={<Cpu size={18} />}
                             />
                              <AnalysisCard 
                                 title="Régulation" 
                                 code="REG" 
                                 result={data.analysis.regulatory} 
-                                color="text-rose-400"
+                                color="text-rose-400" 
                                 icon={<Scale size={18} />}
                             />
                         </div>

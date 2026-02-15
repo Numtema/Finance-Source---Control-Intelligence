@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CompanyData } from '../types';
 import { ISCRadar } from './RadarChart';
@@ -31,6 +32,19 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
   // Logic to fill placeholders up to 3 for visual balance
   const placeholdersNeeded = Math.max(0, 3 - companies.length);
   const placeholders = Array(placeholdersNeeded).fill(0);
+
+  // Helper for Family Coloring
+  const getFamilyStyle = (family: string) => {
+    switch(family) {
+      case 'Internal Fund': return 'text-slate-500 italic';
+      case 'Direct Clients': return 'text-emerald-400 font-bold';
+      case 'Partnership': return 'text-amber-400';
+      case 'Family Control': return 'text-rose-400 font-bold underline';
+      case 'Passive Giants': return 'text-indigo-300';
+      case 'Active Funds': return 'text-blue-300';
+      default: return 'text-slate-400';
+    }
+  };
 
   return (
     <div className="flex flex-col gap-12 pb-12">
@@ -150,7 +164,7 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
         <div className="p-6 border-b border-slate-800 bg-slate-800/50">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Users className="text-indigo-400" /> Matrice d'Actionnariat Croisé
+                <Users className="text-indigo-400" /> Matrice d'Actionnariat Croisé {companies.some(c => c.company.ticker === 'VANGUARD') && <span className="bg-indigo-500 text-white text-xs px-2 py-0.5 rounded ml-2">ORE MODE</span>}
             </h3>
             <p className="text-sm text-slate-400 mt-1">Comparaison directe des pourcentages de détention par investisseur et cumul par entreprise.</p>
         </div>
@@ -176,7 +190,7 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
                             <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
                                 <td className="px-6 py-3 font-medium text-slate-300 sticky left-0 bg-slate-900 border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] flex flex-col justify-center">
                                     <span>{invName}</span>
-                                    <span className="text-[10px] text-slate-500 uppercase font-normal">{family}</span>
+                                    <span className={`text-[10px] uppercase font-normal ${getFamilyStyle(family)}`}>{family}</span>
                                 </td>
                                 {companies.map(c => {
                                     const holder = c.ownership.top_holders.find(h => h.name === invName);

@@ -1,6 +1,21 @@
+
 export type ControlLevel = 'low' | 'medium' | 'high';
 export type InvestorType = 'institutional' | 'insider' | 'retail' | 'strategic' | 'sovereign';
-export type InvestorFamily = 'Passive Giants' | 'Active Funds' | 'Strategic/Industrial' | 'Sovereign' | 'Insiders' | 'Retail';
+export type InvestorFamily = 
+  'Passive Giants' | 
+  'Active Funds' | 
+  'Strategic/Industrial' | 
+  'Sovereign' | 
+  'Insiders' | 
+  'Retail' |
+  'Internal Fund' |     // New for ORE
+  'Direct Clients' |    // New for ORE
+  'Partnership' |       // New for ORE
+  'Alumni' |            // New for ORE
+  'Treasury' |          // New for ORE
+  'Venture' |           // New for ORE
+  'Management' |        // New for ORE
+  'Family Control';     // New for ORE
 
 export interface Investor {
   name: string;
