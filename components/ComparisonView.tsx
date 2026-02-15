@@ -152,15 +152,15 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Users className="text-indigo-400" /> Matrice d'Actionnariat Croisé
             </h3>
-            <p className="text-sm text-slate-400 mt-1">Comparaison directe des pourcentages de détention par investisseur.</p>
+            <p className="text-sm text-slate-400 mt-1">Comparaison directe des pourcentages de détention par investisseur et cumul par entreprise.</p>
         </div>
         <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-950">
                     <tr>
-                        <th className="px-6 py-4 font-medium sticky left-0 bg-slate-950 z-10 border-r border-slate-800">Investisseur</th>
+                        <th className="px-6 py-4 font-medium sticky left-0 bg-slate-950 z-10 border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">Investisseur</th>
                         {companies.map(c => (
-                            <th key={c.company.ticker} className="px-6 py-4 font-medium text-center border-l border-slate-800">
+                            <th key={c.company.ticker} className="px-6 py-4 font-medium text-center border-l border-slate-800 min-w-[100px]">
                                 <div className="text-white">{c.company.ticker}</div>
                             </th>
                         ))}
@@ -174,7 +174,7 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
 
                         return (
                             <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
-                                <td className="px-6 py-3 font-medium text-slate-300 sticky left-0 bg-slate-900 border-r border-slate-800 flex flex-col justify-center">
+                                <td className="px-6 py-3 font-medium text-slate-300 sticky left-0 bg-slate-900 border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] flex flex-col justify-center">
                                     <span>{invName}</span>
                                     <span className="text-[10px] text-slate-500 uppercase font-normal">{family}</span>
                                 </td>
@@ -194,6 +194,23 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
                         );
                     })}
                 </tbody>
+                {/* TOTAL FOOTER */}
+                <tfoot className="bg-slate-950 font-bold border-t-2 border-slate-700">
+                    <tr>
+                         <td className="px-6 py-4 text-white sticky left-0 bg-slate-950 border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] uppercase text-xs tracking-wider">
+                            Total (Top Actionnaires)
+                        </td>
+                        {companies.map(c => {
+                            // Calculate sum of percentages for visible top holders
+                            const total = c.ownership.top_holders.reduce((acc, h) => acc + h.percent, 0);
+                            return (
+                                <td key={`total-${c.company.ticker}`} className="px-6 py-4 text-center border-l border-slate-800 font-mono text-emerald-400">
+                                    {total.toFixed(1)}%
+                                </td>
+                            );
+                        })}
+                    </tr>
+                </tfoot>
             </table>
         </div>
       </div>
