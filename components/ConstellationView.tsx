@@ -52,7 +52,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
           color: '#ffffff',
           label: company.company.ticker,
           subLabel: company.company.name,
-          mass: 5,
+          mass: 10, // Heavier
           connections: 0
         });
       }
@@ -79,7 +79,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
             color: color,
             label: holder.name,
             subLabel: holder.family,
-            mass: 1,
+            mass: 2,
             connections: 0
           });
         }
@@ -88,7 +88,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
         const invNode = nodesMap.get(holder.name)!;
         invNode.connections += 1;
         invNode.radius = Math.min(40, 6 + (invNode.connections * 3)); // Grow star size based on influence
-        invNode.mass = 1 + (invNode.connections * 0.5);
+        invNode.mass = 2 + (invNode.connections * 0.5);
 
         // Update Company stats
         const compNode = nodesMap.get(company.company.ticker)!;
@@ -136,16 +136,19 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
 
     // Initial scatter to avoid explosion
     nodes.forEach(n => {
-        n.x = width / 2 + (Math.random() - 0.5) * 200;
-        n.y = height / 2 + (Math.random() - 0.5) * 200;
+        n.x = width / 2 + (Math.random() - 0.5) * 300;
+        n.y = height / 2 + (Math.random() - 0.5) * 300;
+        // Reset velocity on mount to prevent explosion
+        n.vx = 0;
+        n.vy = 0;
     });
 
     // Loop
     const tick = () => {
-      // --- A. PHYSICS ---
-      const k = 100; // Optimal distance
-      const centerForce = 0.03;
-      const repulsion = 800;
+      // --- A. PHYSICS TUNING (SLOW & SMOOTH) ---
+      const k = 150; // Optimal distance (Longer springs = less clutter)
+      const centerForce = 0.002; // Very weak pull to center
+      const repulsion = 400; // Softer repulsion
 
       // 1. Repulsion (Coulomb's Law-ish)
       for (let i = 0; i < nodes.length; i++) {
@@ -155,10 +158,14 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
           const dx = a.x - b.x;
           const dy = a.y - b.y;
           let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = repulsion / (dist * dist); // Inverse square law might be too strong, using simplified
           
-          const fx = (dx / dist) * force * 5;
-          const fy = (dy / dist) * force * 5;
+          // Clamp distance to avoid massive forces on overlap
+          if (dist < 10) dist = 10;
+
+          const force = repulsion / (dist * dist); 
+          
+          const fx = (dx / dist) * force * 2.0; // Reduced multiplier
+          const fy = (dy / dist) * force * 2.0;
 
           a.vx += fx / a.mass;
           a.vy += fy / a.mass;
@@ -181,7 +188,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
         const targetDist = k / (1 + link.strength * 2); 
         const displacement = dist - targetDist;
         
-        const force = displacement * 0.05; // Spring constant
+        const force = displacement * 0.015; // Very soft spring (was 0.05)
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
 
@@ -193,22 +200,31 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
 
       // 3. Center Gravity & Velocity Update
       nodes.forEach(node => {
-        // Pull to center
-        node.vx += (width / 2 - node.x) * centerForce * 0.5;
-        node.vy += (height / 2 - node.y) * centerForce * 0.5;
+        // Gentle Pull to center
+        node.vx += (width / 2 - node.x) * centerForce;
+        node.vy += (height / 2 - node.y) * centerForce;
 
-        // Apply Velocity with Damping
-        node.vx *= 0.92; // Friction
-        node.vy *= 0.92;
+        // Apply Velocity with HIGH Damping (Friction) for slowness
+        node.vx *= 0.85; // High friction (was 0.92)
+        node.vy *= 0.85;
+        
+        // Cap max velocity to prevent jitter
+        const maxVel = 4;
+        const vel = Math.sqrt(node.vx*node.vx + node.vy*node.vy);
+        if (vel > maxVel) {
+            node.vx = (node.vx / vel) * maxVel;
+            node.vy = (node.vy / vel) * maxVel;
+        }
+
         node.x += node.vx;
         node.y += node.vy;
 
         // Boundary constraint (Soft bounce)
         const margin = 50;
-        if(node.x < margin) node.vx += 1;
-        if(node.x > width - margin) node.vx -= 1;
-        if(node.y < margin) node.vy += 1;
-        if(node.y > height - margin) node.vy -= 1;
+        if(node.x < margin) node.vx += 0.5;
+        if(node.x > width - margin) node.vx -= 0.5;
+        if(node.y < margin) node.vy += 0.5;
+        if(node.y > height - margin) node.vy -= 0.5;
       });
 
       // --- B. RENDERING ---
@@ -237,7 +253,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
         gradient.addColorStop(1, isDimmed ? '#1e293b' : target.color);
         
         ctx.strokeStyle = gradient;
-        ctx.globalAlpha = isDimmed ? 0.1 : (0.2 + (link.value / 20)); // Opacity by ownership
+        ctx.globalAlpha = isDimmed ? 0.05 : (0.15 + (link.value / 30)); // Reduced opacity
         ctx.stroke();
         ctx.globalAlpha = 1;
       });
@@ -253,7 +269,7 @@ export const ConstellationView: React.FC<Props> = ({ companies }) => {
 
         // Glow Effect
         if (!isDimmed) {
-            ctx.shadowBlur = node.type === 'company' ? 30 : 15;
+            ctx.shadowBlur = node.type === 'company' ? 20 : 10;
             ctx.shadowColor = node.color;
         } else {
             ctx.shadowBlur = 0;
