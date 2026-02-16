@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,45 +6,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finance Source | Control Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+            },
+            colors: {
+              'surface': '#13161f',
+              'surface-highlight': '#1c202e',
+              'primary': '#4f46e5',
+            }
+          }
+        }
+      }
+    </script>
     <style>
-      body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
-      /* Custom scrollbar for data tables */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: #1e293b; }
-      ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+      body { 
+        font-family: 'Poppins', sans-serif; 
+        background-color: #0b0d12; /* Deeper, richer dark */
+        color: #e2e8f0; 
+        background-image: 
+          radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.08), transparent 25%), 
+          radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
+        background-attachment: fixed;
+      }
+      
+      /* Smooth transitions */
+      * { transition-property: background-color, border-color, color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
 
-      /* PRINT STYLES FOR PDF EXPORT */
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+      /* PRINT STYLES */
       @media print {
         @page { margin: 0.5cm; size: A4 portrait; }
         body { 
           background-color: #ffffff !important; 
+          background-image: none !important;
           color: #000000 !important; 
           -webkit-print-color-adjust: exact !important; 
           print-color-adjust: exact !important;
         }
-        /* Hide Navigation and Buttons */
         nav, button, input, .no-print { display: none !important; }
-        
-        /* Adjust Layout for Print */
         #root { padding-bottom: 0 !important; }
         main { margin-top: 0 !important; padding: 0 !important; max-width: 100% !important; }
-        
-        /* Force dark backgrounds to print as dark blocks for aesthetics, or inverse for ink saving.
-           Here we keep the "Dark Mode" look because it's the brand identity. */
-        .bg-slate-950, .bg-slate-900, .bg-slate-800 {
-          background-color: #1e293b !important; /* Slightly lighter for print contrast */
-          color: #f8fafc !important;
-          border: 1px solid #cbd5e1 !important;
-          break-inside: avoid;
-        }
-        .text-slate-200, .text-slate-300, .text-slate-400 {
-          color: #e2e8f0 !important;
-        }
-        
-        /* Ensure charts and text don't get cut off */
         .break-inside-avoid { break-inside: avoid; }
+        /* Reset modern UI elements for print readability */
+        .backdrop-blur-md, .backdrop-blur-xl { backdrop-filter: none !important; }
+        .bg-white\/5, .bg-white\/10 { background-color: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
       }
     </style>
   <script type="importmap">
