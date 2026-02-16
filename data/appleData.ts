@@ -1,3 +1,4 @@
+
 import { CompanyData } from '../types';
 
 export const APPLE_DATA: CompanyData = {
@@ -13,7 +14,8 @@ export const APPLE_DATA: CompanyData = {
     headquarters: "Cupertino, California, USA",
     market_cap: "~$3.4 Trillion",
     website: "apple.com",
-    founded: "1976"
+    founded: "1976",
+    geo: { lat: 37.3318, lng: -122.0312, country_code: "US", city: "Cupertino" }
   },
   products: [
     { name: "iPhone", category: "Hardware" },
@@ -34,16 +36,16 @@ export const APPLE_DATA: CompanyData = {
     retail_percent: 36,
     insider_percent: 0.2,
     top_holders: [
-      { name: "Vanguard Group", percent: 9.7, type: "institutional", family: "Passive Giants", is_passive: true },
-      { name: "BlackRock", percent: 7.8, type: "institutional", family: "Passive Giants", is_passive: true },
-      { name: "State Street", percent: 4.1, type: "institutional", family: "Passive Giants", is_passive: true },
-      { name: "Geode Capital Management", percent: 2.4, type: "institutional", family: "Passive Giants", is_passive: true },
-      { name: "Berkshire Hathaway", percent: 1.9, type: "institutional", family: "Strategic/Industrial", is_passive: false },
-      { name: "FMR (Fidelity)", percent: 1.8, type: "institutional", family: "Active Funds" },
-      { name: "Morgan Stanley", percent: 1.6, type: "institutional", family: "Active Funds" },
-      { name: "JPMorgan", percent: 1.5, type: "institutional", family: "Active Funds" },
-      { name: "T. Rowe Price", percent: 1.4, type: "institutional", family: "Active Funds" },
-      { name: "Norges Bank", percent: 1.3, type: "sovereign", family: "Sovereign" }
+      { name: "Vanguard Group", percent: 9.7, type: "institutional", family: "Passive Giants", is_passive: true, geo: { lat: 40.037, lng: -75.514, country_code: "US", city: "Malvern" } },
+      { name: "BlackRock", percent: 7.8, type: "institutional", family: "Passive Giants", is_passive: true, geo: { lat: 40.7128, lng: -74.0060, country_code: "US", city: "New York" } },
+      { name: "State Street", percent: 4.1, type: "institutional", family: "Passive Giants", is_passive: true, geo: { lat: 42.3601, lng: -71.0589, country_code: "US", city: "Boston" } },
+      { name: "Geode Capital Management", percent: 2.4, type: "institutional", family: "Passive Giants", is_passive: true, geo: { lat: 42.3601, lng: -71.0589, country_code: "US", city: "Boston" } },
+      { name: "Berkshire Hathaway", percent: 1.9, type: "institutional", family: "Strategic/Industrial", is_passive: false, geo: { lat: 41.2565, lng: -95.9345, country_code: "US", city: "Omaha" } },
+      { name: "FMR (Fidelity)", percent: 1.8, type: "institutional", family: "Active Funds", geo: { lat: 42.3601, lng: -71.0589, country_code: "US", city: "Boston" } },
+      { name: "Morgan Stanley", percent: 1.6, type: "institutional", family: "Active Funds", geo: { lat: 40.7128, lng: -74.0060, country_code: "US", city: "New York" } },
+      { name: "JPMorgan", percent: 1.5, type: "institutional", family: "Active Funds", geo: { lat: 40.7128, lng: -74.0060, country_code: "US", city: "New York" } },
+      { name: "T. Rowe Price", percent: 1.4, type: "institutional", family: "Active Funds", geo: { lat: 39.2904, lng: -76.6122, country_code: "US", city: "Baltimore" } },
+      { name: "Norges Bank", percent: 1.3, type: "sovereign", family: "Sovereign", geo: { lat: 59.9139, lng: 10.7522, country_code: "NO", city: "Oslo" } }
     ]
   },
   analysis: {

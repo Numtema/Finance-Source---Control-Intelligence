@@ -7,16 +7,21 @@ import { AnalysisCard } from './components/AnalysisCard';
 import { ISCRadar } from './components/RadarChart';
 import { InvestorTable } from './components/InvestorTable';
 import { ComparisonView } from './components/ComparisonView';
+import { ConstellationView } from './components/ConstellationView'; 
+import { TimeMachine } from './components/TimeMachine'; // New Import
+import { GeoMap } from './components/GeoMap'; // New Import
 import { APPLE_DATA } from './data/appleData';
 import { ORE_DATA } from './data/oreData';
 import { downloadJSON, downloadMarkdown, downloadHTML } from './utils/export';
 import { CompanyData } from './types';
 import { 
   Gavel, Wallet, Activity, DollarSign, Cpu, Scale, AlertTriangle, 
-  Search, Sparkles, FileJson, FileText, Printer, Layers, Plus, ArrowRight, FileCode, Zap, Trash2
+  Search, Sparkles, FileJson, FileText, Printer, Layers, Plus, ArrowRight, FileCode, Zap, Trash2,
+  LayoutGrid, Network
 } from 'lucide-react';
 
 type ViewMode = 'single' | 'compare';
+type CompareVis = 'grid' | 'orbit'; 
 
 export default function App() {
   const [data, setData] = useState<CompanyData>(APPLE_DATA);
@@ -25,7 +30,9 @@ export default function App() {
       return saved ? JSON.parse(saved) : [];
   });
   const [viewMode, setViewMode] = useState<ViewMode>('single');
+  const [compareVis, setCompareVis] = useState<CompareVis>('grid'); 
   const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false); // State for time machine
   const [loadingStatus, setLoadingStatus] = useState("");
   const [tickerInput, setTickerInput] = useState("");
 
@@ -33,13 +40,13 @@ export default function App() {
       localStorage.setItem('fs_comparison_deck', JSON.stringify(comparisonList));
   }, [comparisonList]);
 
+  // Main Analysis Handler
   const handleAnalyze = async (input: string = tickerInput) => {
     const tickers = input.split(/[,]+/).map(t => t.trim()).filter(t => t.length > 0);
     if (tickers.length === 0) return;
 
     setLoading(true);
     
-    // Auto-switch to Accumulation Mode if batch or list not empty
     const isBatch = tickers.length > 1;
     if (isBatch || viewMode === 'compare' || comparisonList.length > 0) {
         setViewMode('compare');
@@ -62,6 +69,7 @@ export default function App() {
                 3. Calculate ISC properly.
                 4. Real-world data for profile/products.
                 5. Accurate top 10 shareholders with families (Passive Giants, etc).
+                6. GEOLOCATION: You MUST provide 'geo' { lat: number, lng: number, country_code: string, city: string } for the Company Headquarters AND for the top 5 investors based on their real HQ.
                 
                 EXAMPLE JSON: ${JSON.stringify(APPLE_DATA)}
             `;
@@ -91,6 +99,43 @@ export default function App() {
     setLoading(false);
     setLoadingStatus("");
     setTickerInput("");
+  };
+
+  // Time Machine Handler
+  const handleGenerateHistory = async () => {
+    setLoadingHistory(true);
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    try {
+        const prompt = `
+            Analyze the historical ownership structure of ${data.company.name} (${data.company.ticker}).
+            Generate a JSON array of 3 objects representing the years 2015, 2020, and 2025 (projected).
+            Each object must strictly follow this interface:
+            {
+                year: number;
+                passive_percent: number; // Ownership % of Passive Giants (Vanguard, BlackRock, State Street)
+                active_percent: number; // Ownership % of Active Funds
+                insider_percent: number; // Ownership % of Insiders/Founders
+                isc_score: number; // Estimated ISC Score for that year (0-10)
+            }
+            Return ONLY the JSON array.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: { responseMimeType: 'application/json' }
+        });
+
+        if (response.text) {
+            const historyData = JSON.parse(response.text);
+            setData(prev => ({ ...prev, history: historyData }));
+        }
+    } catch (error) {
+        console.error("Time Machine Failed", error);
+        alert("Erreur lors de la génération de l'historique.");
+    }
+    setLoadingHistory(false);
   };
 
   const loadOREScenario = () => {
@@ -226,8 +271,34 @@ export default function App() {
                              {comparisonList.some(c => c.company.ticker === 'VANGUARD') ? 'Analyse systémique des structures de contrôle et des fonds.' : 'Comparaison structurelle des architectures de pouvoir.'}
                         </p>
                     </div>
+
+                    {/* NEW: VISUALIZATION SWITCHER */}
+                    {comparisonList.length > 0 && (
+                        <div className="bg-white/5 p-1 rounded-xl flex border border-white/5">
+                            <button 
+                                onClick={() => setCompareVis('grid')} 
+                                className={`p-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all ${compareVis === 'grid' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <LayoutGrid size={18} /> Grid
+                            </button>
+                            <button 
+                                onClick={() => setCompareVis('orbit')} 
+                                className={`p-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all ${compareVis === 'orbit' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <Network size={18} /> Orbit
+                            </button>
+                        </div>
+                    )}
                 </div>
-                <ComparisonView companies={comparisonList} onRemove={removeFromComparison} />
+
+                {/* CONDITIONAL RENDERING */}
+                {compareVis === 'grid' ? (
+                    <ComparisonView companies={comparisonList} onRemove={removeFromComparison} />
+                ) : (
+                    <div className="animate-in fade-in zoom-in-95 duration-500">
+                        <ConstellationView companies={comparisonList} />
+                    </div>
+                )}
              </div>
         ) : (
             /* SINGLE VIEW MODE */
@@ -246,6 +317,16 @@ export default function App() {
 
                 <div className="break-inside-avoid mb-8">
                    <CompanyProfile data={data} />
+                </div>
+                
+                {/* NEW: Time Machine & Map Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 break-inside-avoid">
+                     <TimeMachine 
+                        history={data.history} 
+                        onGenerate={handleGenerateHistory} 
+                        isLoading={loadingHistory} 
+                     />
+                     <GeoMap data={data} />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">

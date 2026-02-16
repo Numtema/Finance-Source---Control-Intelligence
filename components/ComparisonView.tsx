@@ -1,18 +1,18 @@
 
-import React, { useState } from 'react';
-import { CompanyData } from '../types';
+import React, { useState, useEffect } from 'react';
+import { CompanyData, ControlIndex } from '../types';
 import { ISCRadar } from './RadarChart';
 import { CompanyProfile } from './CompanyProfile';
 import { AnalysisCard } from './AnalysisCard';
 import { InvestorTable } from './InvestorTable';
 import { downloadJSON, downloadHTML, downloadMarkdown } from '../utils/export';
+import { calculateISC, calculateIDBF, getISCInterpretation } from '../utils/scoring';
 import { 
   Building2, Users, Globe, TrendingUp, Shield, 
   AlertTriangle, DollarSign, Layers, Gavel, Scale, 
   Cpu, Wallet, Activity, XCircle, Maximize2, X, PlusCircle,
-  FileJson, FileCode, FileText
+  FileJson, FileCode, FileText, Sliders, Zap, RefreshCcw, Calculator, ArrowRight
 } from 'lucide-react';
-import { getISCInterpretation } from '../utils/scoring';
 
 interface Props {
   companies: CompanyData[];
@@ -21,14 +21,62 @@ interface Props {
 
 export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
+  
+  // SIMULATION STATE
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simCompany, setSimCompany] = useState<CompanyData | null>(null);
 
-  // Calculate unique investors for the Matrix
+  // Initialize simulation state when company is selected
+  useEffect(() => {
+    if (selectedCompany) {
+        setSimCompany(JSON.parse(JSON.stringify(selectedCompany)));
+        setIsSimulating(false);
+    }
+  }, [selectedCompany]);
+
+  const resetSimulation = () => {
+    if (selectedCompany) {
+        setSimCompany(JSON.parse(JSON.stringify(selectedCompany)));
+    }
+  };
+
+  const updateSimIndex = (key: keyof ControlIndex, value: number) => {
+    if (!simCompany) return;
+    const newIndices = { ...simCompany.indices, [key]: value };
+    // Recalculate ISC Score
+    newIndices.ISC = calculateISC(newIndices.CF, newIndices.CC, newIndices.CM, newIndices.CR, newIndices.CP);
+    setSimCompany({ ...simCompany, indices: newIndices });
+  };
+
+  const updateSimOwner = (index: number, newPercent: number) => {
+    if (!simCompany) return;
+    const newHolders = [...simCompany.ownership.top_holders];
+    newHolders[index] = { ...newHolders[index], percent: newPercent };
+    setSimCompany({
+        ...simCompany,
+        ownership: { ...simCompany.ownership, top_holders: newHolders }
+    });
+  };
+
+  // Derived Metrics for Header
+  const getSimMetrics = () => {
+      if (!selectedCompany || !simCompany) return { iscDelta: 0, idbfDelta: 0 };
+      const origIDBF = calculateIDBF(selectedCompany.ownership.top_holders).idbfScore;
+      const simIDBF = calculateIDBF(simCompany.ownership.top_holders).idbfScore;
+      return {
+          iscDelta: simCompany.indices.ISC - selectedCompany.indices.ISC,
+          idbfDelta: simIDBF - origIDBF
+      };
+  };
+
+  const { iscDelta, idbfDelta } = getSimMetrics();
+
+  // Cross-Ownership Matrix Logic
   const allInvestors = new Set<string>();
   companies.forEach(c => {
     c.ownership.top_holders.forEach(h => allInvestors.add(h.name));
   });
   const uniqueInvestors = Array.from(allInvestors).sort();
-
   const placeholdersNeeded = Math.max(0, 3 - companies.length);
   const placeholders = Array(placeholdersNeeded).fill(0);
 
@@ -208,55 +256,199 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
       {selectedCompany && (
         <div className="fixed inset-0 z-[100] bg-[#0b0d12]/95 backdrop-blur-xl overflow-y-auto">
             <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-                <div className="flex justify-end mb-6 sticky top-4 z-50">
+                
+                {/* MODAL HEADER */}
+                <div className="flex justify-between items-center mb-6 sticky top-4 z-50 bg-[#1c202e]/80 backdrop-blur-xl p-4 rounded-full border border-white/10 shadow-2xl">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/10 px-4 py-2 rounded-full text-white font-bold flex items-center gap-3 border border-white/5">
+                            <span>{selectedCompany.company.ticker}</span>
+                            <span className="text-slate-500">|</span>
+                            <span className="text-sm font-medium text-slate-300 hidden md:inline">{selectedCompany.company.name}</span>
+                        </div>
+                        
+                        {/* WAR ROOM TOGGLE */}
+                        <button 
+                            onClick={() => setIsSimulating(!isSimulating)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all border ${
+                                isSimulating 
+                                ? 'bg-rose-500 text-white border-rose-600 shadow-[0_0_15px_rgba(244,63,94,0.5)]' 
+                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                            }`}
+                        >
+                            <Zap size={16} className={isSimulating ? 'fill-current animate-pulse' : ''} />
+                            {isSimulating ? 'WAR ROOM ACTIVE' : 'Lecture Seule'}
+                        </button>
+
+                        {isSimulating && (
+                            <button 
+                                onClick={resetSimulation}
+                                className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+                                title="Reset Simulation"
+                            >
+                                <RefreshCcw size={16} />
+                            </button>
+                        )}
+                    </div>
+                    
                     <button 
                         onClick={() => setSelectedCompany(null)}
                         className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors backdrop-blur-md border border-white/10 shadow-xl"
                     >
-                        <X size={24} />
+                        <X size={20} />
                     </button>
                 </div>
                 
-                <div className="bg-[#1c202e] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden p-1">
-                    <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-8 border-b border-white/5 flex justify-between items-center">
-                        <h2 className="text-3xl font-black text-white flex items-center gap-4">
-                            <span className="bg-white text-slate-900 px-4 py-1 rounded-xl text-xl shadow-lg">{selectedCompany.company.ticker}</span>
-                            {selectedCompany.company.name}
-                        </h2>
-                    </div>
-
-                    <div className="p-8 space-y-12">
-                        <CompanyProfile data={selectedCompany} />
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-1">
-                                <ISCRadar indices={selectedCompany.indices} />
-                                <div className="mt-8 space-y-4">
-                                    {selectedCompany.pressure_levers.map((lever, i) => (
-                                        <div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
-                                            <div className="text-sm font-semibold text-slate-300">{lever.force}</div>
-                                            <div className="text-xs text-rose-400 font-bold border border-rose-500/20 bg-rose-500/10 px-3 py-1 rounded-lg">{lever.strength}</div>
+                <div className={`bg-[#1c202e] border rounded-[3rem] shadow-2xl overflow-hidden p-1 transition-all duration-500 ${isSimulating ? 'border-rose-500/30 shadow-[0_0_50px_rgba(244,63,94,0.1)]' : 'border-white/10'}`}>
+                    
+                    {/* CONDITIONAL CONTENT */}
+                    {isSimulating && simCompany ? (
+                        /* --- WAR ROOM MODE --- */
+                        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                             {/* Simulation Header Stats */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-rose-950/30 border border-rose-500/20 rounded-[2rem] p-6 flex justify-between items-center relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-rose-500/5 animate-pulse"></div>
+                                    <div>
+                                        <div className="text-rose-400 font-bold uppercase tracking-widest text-xs mb-1">ISC Projeté</div>
+                                        <div className="text-5xl font-black text-white flex items-baseline gap-3">
+                                            {simCompany.indices.ISC.toFixed(2)}
+                                            {iscDelta !== 0 && (
+                                                <span className={`text-lg font-bold px-2 py-1 rounded-lg ${iscDelta > 0 ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                                    {iscDelta > 0 ? '+' : ''}{iscDelta.toFixed(2)}
+                                                </span>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+                                    <Calculator className="text-rose-500/20 w-24 h-24 absolute -right-6 -bottom-6" />
+                                </div>
+                                <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-[2rem] p-6 flex justify-between items-center relative overflow-hidden">
+                                    <div>
+                                        <div className="text-indigo-400 font-bold uppercase tracking-widest text-xs mb-1">IDBF Projeté</div>
+                                        <div className="text-5xl font-black text-white flex items-baseline gap-3">
+                                            {(calculateIDBF(simCompany.ownership.top_holders).idbfScore * 100).toFixed(0)}%
+                                            {idbfDelta !== 0 && (
+                                                <span className={`text-lg font-bold px-2 py-1 rounded-lg ${idbfDelta > 0 ? 'bg-indigo-500 text-white' : 'bg-slate-500 text-white'}`}>
+                                                    {idbfDelta > 0 ? '+' : ''}{(idbfDelta * 100).toFixed(0)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Users className="text-indigo-500/20 w-24 h-24 absolute -right-6 -bottom-6" />
+                                </div>
+                             </div>
+
+                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* LEFT: Structural Levers */}
+                                <div className="lg:col-span-5 space-y-6">
+                                    <div className="bg-[#0b0d12]/50 border border-white/5 rounded-[2rem] p-6">
+                                        <h3 className="text-slate-400 font-bold uppercase text-xs mb-6 flex items-center gap-2">
+                                            <Sliders size={16} /> Leviers Structurels
+                                        </h3>
+                                        <div className="space-y-6">
+                                            {(['CF', 'CC', 'CM', 'CR', 'CP'] as Array<keyof ControlIndex>).map((key) => (
+                                                <div key={key}>
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-sm font-bold text-slate-300">{key} Score</span>
+                                                        <span className="text-sm font-mono text-rose-400">{simCompany.indices[key]}</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" max="10" step="1"
+                                                        value={simCompany.indices[key]}
+                                                        onChange={(e) => updateSimIndex(key, parseInt(e.target.value))}
+                                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-8 h-48">
+                                            <ISCRadar indices={simCompany.indices} minimal />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* RIGHT: Ownership War */}
+                                <div className="lg:col-span-7">
+                                    <div className="bg-[#0b0d12]/50 border border-white/5 rounded-[2rem] p-6 h-full">
+                                        <h3 className="text-slate-400 font-bold uppercase text-xs mb-6 flex items-center gap-2">
+                                            <Wallet size={16} /> Guerre des Capitaux
+                                        </h3>
+                                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {simCompany.ownership.top_holders.map((holder, idx) => (
+                                                <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm">{holder.name}</div>
+                                                            <div className="text-[10px] text-slate-500 uppercase">{holder.family}</div>
+                                                        </div>
+                                                        <div className="font-mono text-indigo-400 font-bold">{holder.percent.toFixed(1)}%</div>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" max="20" step="0.1"
+                                                        value={holder.percent}
+                                                        onChange={(e) => updateSimOwner(idx, parseFloat(e.target.value))}
+                                                        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-6 pt-6 border-t border-white/5">
+                                            <InvestorTable 
+                                                investors={simCompany.ownership.top_holders}
+                                                institutionalPct={simCompany.ownership.institutional_percent} // Simplification: keeps original totals for now
+                                                retailPct={simCompany.ownership.retail_percent}
+                                                insiderPct={simCompany.ownership.insider_percent}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    ) : (
+                        /* --- READ MODE (Existing) --- */
+                        <div className="animate-in fade-in zoom-in-95 duration-300">
+                             <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-8 border-b border-white/5 flex justify-between items-center">
+                                <h2 className="text-3xl font-black text-white flex items-center gap-4">
+                                    <span className="bg-white text-slate-900 px-4 py-1 rounded-xl text-xl shadow-lg">{selectedCompany.company.ticker}</span>
+                                    {selectedCompany.company.name}
+                                </h2>
+                            </div>
+
+                            <div className="p-8 space-y-12">
+                                <CompanyProfile data={selectedCompany} />
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-1">
+                                        <ISCRadar indices={selectedCompany.indices} />
+                                        <div className="mt-8 space-y-4">
+                                            {selectedCompany.pressure_levers.map((lever, i) => (
+                                                <div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                                                    <div className="text-sm font-semibold text-slate-300">{lever.force}</div>
+                                                    <div className="text-xs text-rose-400 font-bold border border-rose-500/20 bg-rose-500/10 px-3 py-1 rounded-lg">{lever.strength}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <AnalysisCard title="Contrôle Formel" code="CF" result={selectedCompany.analysis.formal_control} color="text-blue-400" icon={<Gavel size={18} />} />
+                                        <AnalysisCard title="Contrôle Capital" code="CC" result={selectedCompany.analysis.capital_control} color="text-indigo-400" icon={<Wallet size={18} />} />
+                                        <AnalysisCard title="Contrainte Marché" code="CM" result={selectedCompany.analysis.market_constraint} color="text-sky-400" icon={<Activity size={18} />} />
+                                        <AnalysisCard title="Puissance Revenus" code="CR" result={selectedCompany.analysis.revenue_power} color="text-emerald-400" icon={<DollarSign size={18} />} />
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 border-t border-white/5">
+                                    <InvestorTable 
+                                        investors={selectedCompany.ownership.top_holders}
+                                        institutionalPct={selectedCompany.ownership.institutional_percent}
+                                        retailPct={selectedCompany.ownership.retail_percent}
+                                        insiderPct={selectedCompany.ownership.insider_percent}
+                                    />
                                 </div>
                             </div>
-                            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <AnalysisCard title="Contrôle Formel" code="CF" result={selectedCompany.analysis.formal_control} color="text-blue-400" icon={<Gavel size={18} />} />
-                                <AnalysisCard title="Contrôle Capital" code="CC" result={selectedCompany.analysis.capital_control} color="text-indigo-400" icon={<Wallet size={18} />} />
-                                <AnalysisCard title="Contrainte Marché" code="CM" result={selectedCompany.analysis.market_constraint} color="text-sky-400" icon={<Activity size={18} />} />
-                                <AnalysisCard title="Puissance Revenus" code="CR" result={selectedCompany.analysis.revenue_power} color="text-emerald-400" icon={<DollarSign size={18} />} />
-                            </div>
                         </div>
-
-                        <div className="pt-8 border-t border-white/5">
-                            <InvestorTable 
-                                investors={selectedCompany.ownership.top_holders}
-                                institutionalPct={selectedCompany.ownership.institutional_percent}
-                                retailPct={selectedCompany.ownership.retail_percent}
-                                insiderPct={selectedCompany.ownership.insider_percent}
-                            />
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -1,4 +1,5 @@
 
+
 import { CompanyData } from '../types';
 
 export const ORE_DATA: CompanyData[] = [
@@ -15,7 +16,8 @@ export const ORE_DATA: CompanyData[] = [
       headquarters: "Malvern, Pennsylvania",
       market_cap: "N/A (Mutual)",
       website: "vanguard.com",
-      founded: "1975"
+      founded: "1975",
+      geo: { lat: 40.037, lng: -75.514, country_code: "US", city: "Malvern" }
     },
     products: [{ name: "Index Funds", category: "Finance" }, { name: "ETFs", category: "Finance" }],
     visual_assets: { executives: [{ name: "Mortimer J. Buckley", role: "CEO" }] },
@@ -60,7 +62,8 @@ export const ORE_DATA: CompanyData[] = [
       headquarters: "New York, USA",
       market_cap: "~$140B",
       website: "blackrock.com",
-      founded: "1988"
+      founded: "1988",
+      geo: { lat: 40.7128, lng: -74.0060, country_code: "US", city: "New York" }
     },
     products: [{ name: "iShares", category: "ETF" }, { name: "Aladdin", category: "Tech" }],
     visual_assets: { executives: [{ name: "Larry Fink", role: "CEO" }] },
@@ -105,7 +108,8 @@ export const ORE_DATA: CompanyData[] = [
       headquarters: "Boston, Massachusetts",
       market_cap: "Private",
       website: "geodecapital.com",
-      founded: "2001"
+      founded: "2001",
+      geo: { lat: 42.3601, lng: -71.0589, country_code: "US", city: "Boston" }
     },
     products: [{ name: "Index Strategies", category: "Finance" }],
     visual_assets: { executives: [] },
@@ -150,7 +154,8 @@ export const ORE_DATA: CompanyData[] = [
       headquarters: "New York, USA",
       market_cap: "~$580B",
       website: "jpmorganchase.com",
-      founded: "2000"
+      founded: "2000",
+      geo: { lat: 40.7128, lng: -74.0060, country_code: "US", city: "New York" }
     },
     products: [{ name: "Banking", category: "Finance" }, { name: "Investment", category: "Finance" }],
     visual_assets: { executives: [{ name: "Jamie Dimon", role: "CEO" }] },

@@ -8,14 +8,21 @@ export type InvestorFamily =
   'Sovereign' | 
   'Insiders' | 
   'Retail' |
-  'Internal Fund' |     // New for ORE
-  'Direct Clients' |    // New for ORE
-  'Partnership' |       // New for ORE
-  'Alumni' |            // New for ORE
-  'Treasury' |          // New for ORE
-  'Venture' |           // New for ORE
-  'Management' |        // New for ORE
-  'Family Control';     // New for ORE
+  'Internal Fund' |     
+  'Direct Clients' |    
+  'Partnership' |       
+  'Alumni' |            
+  'Treasury' |          
+  'Venture' |           
+  'Management' |        
+  'Family Control';     
+
+export interface GeoLocation {
+    lat: number;
+    lng: number;
+    country_code: string;
+    city: string;
+}
 
 export interface Investor {
   name: string;
@@ -23,6 +30,7 @@ export interface Investor {
   type: InvestorType;
   family: InvestorFamily;
   is_passive?: boolean;
+  geo?: GeoLocation; // Added for Map
 }
 
 export interface StepResult {
@@ -42,6 +50,14 @@ export interface ControlIndex {
   dominant_mode: string;
 }
 
+export interface HistoricalPoint {
+    year: number;
+    passive_percent: number;
+    active_percent: number;
+    insider_percent: number;
+    isc_score: number;
+}
+
 export interface CompanyData {
   company: {
     name: string;
@@ -56,6 +72,7 @@ export interface CompanyData {
     market_cap: string;
     website: string;
     founded: string;
+    geo: GeoLocation; // Added for Map
   };
   products: {
     name: string;
@@ -63,7 +80,7 @@ export interface CompanyData {
   }[];
   visual_assets: {
     logo_url?: string;
-    cover_image_prompt?: string; // For UI simulation
+    cover_image_prompt?: string; 
     executives: { name: string; role: string; image_url?: string }[];
   };
   ownership: {
@@ -87,6 +104,7 @@ export interface CompanyData {
     notes: string;
   }[];
   indices: ControlIndex;
+  history?: HistoricalPoint[]; // Added for Time Machine
 }
 
 export interface FrameworkStepDefinition {
