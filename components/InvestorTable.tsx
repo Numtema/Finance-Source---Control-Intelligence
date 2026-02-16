@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Investor } from '../types';
 import { calculateIDBF } from '../utils/scoring';
@@ -24,7 +25,7 @@ export const InvestorTable: React.FC<Props> = ({ investors, institutionalPct, re
       <div className="col-span-1 bg-slate-800 rounded-xl p-5 border border-slate-700 flex flex-col items-center">
          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 w-full">Dominance Structurelle (IDBF)</h3>
          
-         <div className="h-48 w-full relative">
+         <div className="h-48 w-full relative min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

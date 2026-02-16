@@ -102,8 +102,8 @@ export const ComparisonView: React.FC<Props> = ({ companies, onRemove }) => {
                     {/* Chart Container */}
                     <div className="border border-slate-800 rounded-lg p-2 bg-slate-900/50 relative">
                         <div className="text-xs text-slate-500 uppercase tracking-widest absolute top-3 left-3">ARCHITECTURE DU POUVOIR</div>
-                        <div className="h-48">
-                            <ISCRadar indices={data.indices} />
+                        <div className="h-48 mt-4">
+                            <ISCRadar indices={data.indices} minimal />
                         </div>
                         
                         {/* 5 Icons Row overlaid at bottom of chart box or separate */}
