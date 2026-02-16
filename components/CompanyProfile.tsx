@@ -60,19 +60,38 @@ export const CompanyProfile: React.FC<Props> = ({ data }) => {
             </div>
          </div>
         
-        <div className="mt-8 pt-6 border-t border-white/5">
-             <div className="text-[10px] text-slate-500 font-bold mb-3 uppercase tracking-widest">Leadership</div>
-             {data.visual_assets.executives.map((exec, i) => (
-                 <div key={i} className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white overflow-hidden ring-2 ring-white/10">
-                        {exec.name[0]}
+        <div>
+            <div className="mt-8 pt-6 border-t border-white/5">
+                <div className="text-[10px] text-slate-500 font-bold mb-3 uppercase tracking-widest">Leadership</div>
+                {data.visual_assets.executives.map((exec, i) => (
+                    <div key={i} className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white overflow-hidden ring-2 ring-white/10">
+                            {exec.name[0]}
+                        </div>
+                        <div>
+                            <div className="text-sm font-bold text-white leading-none mb-1">{exec.name}</div>
+                            <div className="text-xs text-indigo-400 font-medium">{exec.role}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div className="text-sm font-bold text-white leading-none mb-1">{exec.name}</div>
-                        <div className="text-xs text-indigo-400 font-medium">{exec.role}</div>
-                    </div>
-                 </div>
-             ))}
+                ))}
+            </div>
+
+            {/* Display Search Grounding Sources */}
+            {data.sources && data.sources.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-white/5">
+                     <div className="text-[10px] text-slate-500 font-bold mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <Globe size={12} className="text-emerald-400" /> Sources Vérifiées
+                     </div>
+                     <div className="space-y-2">
+                        {data.sources.slice(0, 3).map((source, i) => (
+                            <a key={i} href={source.uri} target="_blank" rel="noopener noreferrer" className="block text-xs text-slate-400 hover:text-blue-400 truncate transition-colors flex items-center gap-2 group">
+                                <Link2 size={10} className="text-slate-600 group-hover:text-blue-400" />
+                                <span className="truncate">{source.title}</span>
+                            </a>
+                        ))}
+                     </div>
+                </div>
+            )}
         </div>
       </div>
     </div>

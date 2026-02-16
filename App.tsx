@@ -8,8 +8,9 @@ import { ISCRadar } from './components/RadarChart';
 import { InvestorTable } from './components/InvestorTable';
 import { ComparisonView } from './components/ComparisonView';
 import { ConstellationView } from './components/ConstellationView'; 
-import { TimeMachine } from './components/TimeMachine'; // New Import
-import { GeoMap } from './components/GeoMap'; // New Import
+import { TimeMachine } from './components/TimeMachine';
+import { GeoMap } from './components/GeoMap';
+import { AnalystChat } from './components/AnalystChat'; // New Chatbot Component
 import { APPLE_DATA } from './data/appleData';
 import { ORE_DATA } from './data/oreData';
 import { downloadJSON, downloadMarkdown, downloadHTML } from './utils/export';
@@ -32,7 +33,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('single');
   const [compareVis, setCompareVis] = useState<CompareVis>('grid'); 
   const [loading, setLoading] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false); // State for time machine
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [tickerInput, setTickerInput] = useState("");
 
@@ -61,6 +62,9 @@ export default function App() {
             const prompt = `
                 You are 'Finance Source', an advanced corporate control analysis engine.
                 TASK: Analyze "${targetTicker.toUpperCase()}".
+                
+                IMPORTANT: Use the Google Search tool to find the most recent 2024-2025 financial reports, proxy statements (DEF 14A), and major shareholder data.
+                
                 Generate a strictly typed JSON object for Control Intelligence 2025/2026.
                 CRITICAL: All text summaries MUST be in FRENCH.
                 REQUIREMENTS:
@@ -77,11 +81,26 @@ export default function App() {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
-                config: { responseMimeType: 'application/json' }
+                config: { 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }] // Enable Google Search Grounding
+                }
             });
 
             if (response.text) {
                 const newData = JSON.parse(response.text);
+
+                // Extract Grounding Sources
+                const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+                if (groundingMetadata?.groundingChunks) {
+                    newData.sources = groundingMetadata.groundingChunks
+                        .map((chunk: any) => ({
+                            title: chunk.web?.title || 'Web Source',
+                            uri: chunk.web?.uri
+                        }))
+                        .filter((s: any) => s.uri);
+                }
+
                 if (isBatch || viewMode === 'compare' || comparisonList.length > 0) {
                     setComparisonList(prev => {
                         if (prev.find(c => c.company.ticker === newData.company.ticker)) return prev;
@@ -109,6 +128,7 @@ export default function App() {
     try {
         const prompt = `
             Analyze the historical ownership structure of ${data.company.name} (${data.company.ticker}).
+            Use your knowledge base to retrieve historical data.
             Generate a JSON array of 3 objects representing the years 2015, 2020, and 2025 (projected).
             Each object must strictly follow this interface:
             {
@@ -183,7 +203,7 @@ export default function App() {
                   <p className="text-2xl font-semibold text-white tracking-tight mb-2">
                       {loadingStatus || "Intelligence Engine Active"}
                   </p>
-                  <p className="text-sm text-slate-500 font-medium">Finance Source analyse les structures de contrôle...</p>
+                  <p className="text-sm text-slate-500 font-medium">Recherche Live Web & Analyse Structurelle...</p>
               </div>
           </div>
       )
@@ -319,7 +339,7 @@ export default function App() {
                    <CompanyProfile data={data} />
                 </div>
                 
-                {/* NEW: Time Machine & Map Row */}
+                {/* Time Machine & Map Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 break-inside-avoid">
                      <TimeMachine 
                         history={data.history} 
@@ -429,6 +449,9 @@ export default function App() {
         )}
 
       </main>
+
+      {/* Persistent Chatbot (Available in all views if context data exists) */}
+      <AnalystChat data={data} />
     </div>
   );
 }

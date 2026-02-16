@@ -105,6 +105,7 @@ export interface CompanyData {
   }[];
   indices: ControlIndex;
   history?: HistoricalPoint[]; // Added for Time Machine
+  sources?: { title: string; uri: string }[]; // Added for Search Grounding
 }
 
 export interface FrameworkStepDefinition {
